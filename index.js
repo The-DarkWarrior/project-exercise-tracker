@@ -26,22 +26,6 @@ function generateId() {
   return id.toString();
 }
 
-function convertirFormato(fechaString) {
-  const fecha = new Date(fechaString);
-
-  const meses = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const diasSemana = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  const diaSemana = diasSemana[fecha.getDay()];
-  const mes = meses[fecha.getMonth()];
-  const dia = fecha.getDate();
-  const año = fecha.getFullYear();
-
-  // Formatear la fecha en el formato deseado
-  const fechaFormateada = `${diaSemana} ${mes} ${dia.toString().padStart(2, '0')} ${año}`;
-
-  return fechaFormateada;
-}
 
 //Users
 function createUser(username) {
@@ -72,13 +56,7 @@ function searchUserbyId(_id) {
 }
 
 function searchExerciceByUserId(_id) {
-  return listExercices.filter(item => item._id === _id).map(({ _id, date, ...rest}) => {
-    return {
-      _id,
-      date: new Date(date).toDateString(), // Formatear la fecha utilizando toDateString()
-      ...rest
-    };
-  });
+  return listExercices.filter(item => item._id === _id).map(({ _id, ...rest}) => rest);
 }
 
 app.post('/api/users', function(req, res) {
@@ -102,24 +80,17 @@ app.post('/api/users/:_id/exercises', function(req, res) {
   const _id = req.params._id;
   const description = req.body.description;
   const duration = req.body.duration;
-  const vaidDate = req.body.date;
+  const date = req.body.date;
 
-  if (!vaidDate) {
-    const currentDate = new Date();
-    const year = currentDate.getFullYear();
-    let month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-    let day = currentDate.getDate().toString().padStart(2, '0');
-    date = `${year}-${month}-${day}`;
-  }else{
-    date = vaidDate
-  }
-  exercise = createExercise(description, duration, date, _id);
+  const dateValid = date ? new Date(date): new Date()
+
+  exercise = createExercise(description, duration, dateValid, _id);
   user = searchUserbyId(_id)
   result = {
     username: user.username,
     description: exercise.description,
     duration: exercise.duration,
-    date:  convertirFormato(exercise.date),
+    date:  exercise.date.toDateString(),
     _id: user._id,
   };
   res.json(result);
@@ -132,9 +103,7 @@ app.get('/api/users/:_id/logs', function(req, res) {
   let filteredExercises = searchExerciceByUserId(_id);
   if (from || to) {
     filteredExercises = filteredExercises.filter(item => {
-      console.log("date", date)
       const exerciseDate = new Date(item.date);
-      console.log("exerciseDate", exerciseDate)
       if (from && to) {
         return exerciseDate >= new Date(from) && exerciseDate <= new Date(to);
       } else if (from) {
@@ -151,18 +120,17 @@ app.get('/api/users/:_id/logs', function(req, res) {
 
   const user = searchUserbyId(_id);
 
-  const logs = filteredExercises.map(item => ({
-    description: item.description,
-    duration: item.duration,
-    date: convertirFormato(item.date)
+  const logs = filteredExercises.map(e => ({
+    description: e.description,
+    duration: e.duration,
+    date: e.date.toDateString()
   }));
   
-  console.log(logs)
   const result = {
     username: user.username,
     count: logs.length,
     _id: user._id,
-    logs: logs
+    log: logs
   };
 
   res.json(result);
