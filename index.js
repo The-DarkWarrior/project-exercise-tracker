@@ -72,7 +72,13 @@ function searchUserbyId(_id) {
 }
 
 function searchExerciceByUserId(_id) {
-  return listExercices.filter(item => item._id === _id).map(({ _id, ...rest}) => rest)
+  return listExercices.filter(item => item._id === _id).map(({ _id, date, ...rest}) => {
+    return {
+      _id,
+      date: new Date(date).toDateString(), // Formatear la fecha utilizando toDateString()
+      ...rest
+    };
+  });
 }
 
 app.post('/api/users', function(req, res) {
@@ -124,28 +130,18 @@ app.get('/api/users/:_id/logs', function(req, res) {
   const { from, to, limit} = req.query;
 
   let filteredExercises = searchExerciceByUserId(_id);
-
-  // Convertir 'from' y 'to' a objetos Date si están presentes
-  let fromDate = from ? new Date(from) : null;
-  let toDate = to ? new Date(to) : null;
-
-  // Filtrar los ejercicios por fecha
-  if (fromDate && toDate) {
+  if (from || to) {
     filteredExercises = filteredExercises.filter(item => {
-      console.log("Date", item.date)
+      console.log("date", date)
       const exerciseDate = new Date(item.date);
       console.log("exerciseDate", exerciseDate)
-      return exerciseDate >= fromDate && exerciseDate <= toDate;
-    });
-  } else if (fromDate) {
-    filteredExercises = filteredExercises.filter(item => {
-      const exerciseDate = new Date(item.date);
-      return exerciseDate >= fromDate;
-    });
-  } else if (toDate) {
-    filteredExercises = filteredExercises.filter(item => {
-      const exerciseDate = new Date(item.date);
-      return exerciseDate <= toDate;
+      if (from && to) {
+        return exerciseDate >= new Date(from) && exerciseDate <= new Date(to);
+      } else if (from) {
+        return exerciseDate >= new Date(from);
+      } else if (to) {
+        return exerciseDate <= new Date(to);
+      }
     });
   }
 
@@ -155,16 +151,10 @@ app.get('/api/users/:_id/logs', function(req, res) {
 
   const user = searchUserbyId(_id);
 
-  //const logs = filteredExercises.map(item => ({
-    //description: item.description,
-    //duration: item.duration,
-    //date: convertirFormato(item.date)
-  //}));
-  
   const logs = filteredExercises.map(item => ({
-    description: item.description || '', // Asegurar que la propiedad description exista
-    duration: typeof item.duration === 'number' ? item.duration : 0, // Asegurar que la propiedad duration sea un número
-    date: typeof item.date === 'string' ? item.date : '' // Asegurar que la propiedad date sea una cadena
+    description: item.description,
+    duration: item.duration,
+    date: convertirFormato(item.date)
   }));
   
   console.log(logs)
