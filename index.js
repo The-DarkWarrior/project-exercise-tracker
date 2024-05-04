@@ -154,7 +154,7 @@ app.get('/api/users/:_id/logs', function(req, res) {
     username: user.username,
     count: logs.length,
     _id: user._id,
-    logs: filteredExercises
+    logs: logs
   };
 
   res.json(result);
