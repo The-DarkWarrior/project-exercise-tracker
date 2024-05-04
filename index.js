@@ -45,9 +45,10 @@ function convertirFormato(fechaString) {
 
 //Users
 function createUser(username) {
-  const id = generateId();
-  listUsers.push({ id: id, username: username });
-  return id;
+  const _id = generateId();
+  user = { _id: _id, username: username }
+  listUsers.push(user);
+  return user;
 }
 
 function searchUserbyUserName(username) {
@@ -55,60 +56,75 @@ function searchUserbyUserName(username) {
 }
 
 // Exercises
-function createExercise(description, duration, date, userId) {
-  exercise = { userId: userId, description: description, duration: parseInt(duration), date: date }
+function createExercise(description, duration, date, _id) {
+  exercise = {
+     _id: _id, 
+     description: description, 
+     duration: parseInt(duration), 
+     date: date 
+  }
   listExercices.push(exercise);
   return exercise;
 }
 
-function searchUserbyId(userId) {
-  return listUsers.find(item => item.id === userId)
+function searchUserbyId(_id) {
+  return listUsers.find(item => item._id === _id)
 }
 
-function searchExerciceByUserId(userId) {
-  return listExercices.filter(item => item.userId === userId).map(({ userId, ...rest}) => rest)
+function searchExerciceByUserId(_id) {
+  return listExercices.filter(item => item._id === _id).map(({ _id, ...rest}) => rest)
 }
 
 app.post('/api/users', function(req, res) {
   const username = req.body.username;
-  userExist = searchUserbyUserName(username)
-  if (!userExist){
-    getId = createUser(username);
-  }else{
-    getId = userExist.id
+  user = searchUserbyUserName(username)
+  if (!user){
+    user = createUser(username);
   }
   result = {
     username: username,
-    _id: getId
+    _id: user._id
   }
-  
   res.json(result);
 });
 
+app.get('/api/users', function(req, res) {
+  res.json(listUsers);
+});
+
 app.post('/api/users/:_id/exercises', function(req, res) {
-  const userId = req.params._id;
+  const _id = req.params._id;
   const description = req.body.description;
   const duration = req.body.duration;
-  const date = req.body.date;
+  const vaidDate = req.body.date;
 
-  exercise = createExercise(description, duration, date, userId);
-  user = searchUserbyId(userId)
+  if (!vaidDate) {
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    let month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+    let day = currentDate.getDate().toString().padStart(2, '0');
+    date = `${year}-${month}-${day}`;
+  }else{
+    date = vaidDate
+  }
+
+  exercise = createExercise(description, duration, date, _id);
+  user = searchUserbyId(_id)
   result = {
     username: user.username,
     description: exercise.description,
     duration: exercise.duration,
     date:  convertirFormato(exercise.date),
-    _id: user.id,
+    _id: user._id,
   };
-  
   res.json(result);
 });
 
 app.get('/api/users/:_id/logs', function(req, res) {
-  const userId = req.params._id;
+  const _id = req.params._id;
   const { from, to, limit} = req.query;
 
-  let filteredExercises = searchExerciceByUserId(userId);
+  let filteredExercises = searchExerciceByUserId(_id);
 
 
   if (from || to) {
@@ -128,14 +144,15 @@ app.get('/api/users/:_id/logs', function(req, res) {
     filteredExercises = filteredExercises.slice(0, Number(limit));
   }
 
-  const user = searchUserbyId(userId);
+  const user = searchUserbyId(_id);
 
   filteredExercises.forEach(item => { item.date = convertirFormato(item.date)})
 
+  console.log(filteredExercises)
   const result = {
     username: user.username,
-    count: filteredExercises.length,
-    _id: user.id,
+    count: parseInt(filteredExercises.length),
+    _id: user._id,
     logs: filteredExercises
   };
 
