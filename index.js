@@ -107,7 +107,6 @@ app.post('/api/users/:_id/exercises', function(req, res) {
   }else{
     date = vaidDate
   }
-
   exercise = createExercise(description, duration, date, _id);
   user = searchUserbyId(_id)
   result = {
@@ -125,8 +124,6 @@ app.get('/api/users/:_id/logs', function(req, res) {
   const { from, to, limit} = req.query;
 
   let filteredExercises = searchExerciceByUserId(_id);
-
-
   if (from || to) {
     filteredExercises = filteredExercises.filter(item => {
       const exerciseDate = new Date(item.date);
@@ -146,12 +143,16 @@ app.get('/api/users/:_id/logs', function(req, res) {
 
   const user = searchUserbyId(_id);
 
-  filteredExercises.forEach(item => { item.date = convertirFormato(item.date)})
-
+  const logs = filteredExercises.map(item => ({
+    description: item.description,
+    duration: item.duration,
+    date: convertirFormato(item.date)
+  }));
+  
   console.log(filteredExercises)
   const result = {
     username: user.username,
-    count: parseInt(filteredExercises.length),
+    count: logs.length,
     _id: user._id,
     logs: filteredExercises
   };
