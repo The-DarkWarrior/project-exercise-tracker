@@ -23,7 +23,7 @@ const listLog = []
 function generateId() {
   const bytes = crypto.randomBytes(12);
   const id = bytes.toString('hex');
-  return id;
+  return id.toString();
 }
 
 function convertirFormato(fechaString) {
@@ -149,7 +149,7 @@ app.get('/api/users/:_id/logs', function(req, res) {
     date: convertirFormato(item.date)
   }));
   
-  console.log(filteredExercises)
+  console.log(logs)
   const result = {
     username: user.username,
     count: logs.length,
